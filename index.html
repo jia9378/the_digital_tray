@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Digital Tray</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Serif:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <header class="topbar">
+    <div>
+      <span class="brand">DIGITAL TRAY</span>
+      <span class="file-name">untitled ring 01</span>
+    </div>
+    <nav class="modes">
+      <span class="mode active">TRAY</span>
+      <span class="mode disabled" title="Coming later">STUDY</span>
+      <span class="mode disabled" title="Coming later">TRY ON</span>
+    </nav>
+  </header>
+
+  <main class="panel">
+
+    <nav class="filters" id="filters">
+      <button class="filter active" data-gem="all">ALL</button>
+      <button class="filter" data-gem="sapphire">SAPPHIRE</button>
+      <button class="filter" data-gem="ruby">RUBY</button>
+      <button class="filter" data-gem="emerald">EMERALD</button>
+      <button class="filter" data-gem="diamond">DIAMOND</button>
+    </nav>
+
+    <div class="workspace">
+      <!-- The tray. 1 unit in the viewBox = 1 mm. -->
+      <svg id="tray" viewBox="-4 -4 208 120">
+        <g id="tray-base"></g>
+        <g id="stone-layer"></g>
+      </svg>
+
+      <aside class="inspector" id="inspector"></aside>
+    </div>
+
+    <p class="label">STONE LIBRARY &mdash; DRAG ONTO TRAY (OR CLICK TO ADD)</p>
+    <div class="library" id="library"></div>
+
+    <footer class="status">
+      <span id="count">0 stones on tray</span>
+      <button class="link-button" id="clear-btn">CLEAR TRAY</button>
+    </footer>
+  </main>
+
+  <script src="js/stones.js"></script>
+  <script src="js/tray.js"></script>
+</body>
+</html>
