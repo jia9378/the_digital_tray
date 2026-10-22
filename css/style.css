@@ -14,18 +14,44 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
-  padding: 24px;
+  padding: 16px;
   background: var(--paper);
   color: var(--ink);
   font-family: var(--mono);
   font-size: 14px;
 }
 
-button {
+button,
+select,
+input {
   font-family: var(--mono);
+  color: var(--ink);
+}
+
+button {
   cursor: pointer;
+}
+
+select {
+  padding: 4px 6px;
+  border: 1px solid var(--ink);
+  background: #fff;
+  font-size: 12px;
+  border-radius: 0;
+}
+
+/* Holds shared gradients. Must not be display:none, or they stop working. */
+.defs-holder {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
 }
 
 /* ---------- Top bar ---------- */
@@ -33,9 +59,11 @@ button {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 1200px;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  max-width: 1680px;
   margin: 0 auto;
-  padding: 16px 24px;
+  padding: 14px 24px;
   border: 1px solid var(--ink);
   border-bottom: none;
   background: var(--panel);
@@ -53,48 +81,78 @@ button {
 
 .modes {
   display: flex;
-  gap: 32px;
+  gap: 28px;
   letter-spacing: 0.15em;
+}
+
+.mode {
+  border: none;
+  background: none;
+  padding: 0 0 4px;
+  font-size: 14px;
+  letter-spacing: 0.15em;
+  border-bottom: 2px solid transparent;
 }
 
 .mode.active {
   color: var(--accent);
-  border-bottom: 2px solid var(--accent);
-  padding-bottom: 4px;
+  border-bottom-color: var(--accent);
 }
 
 .mode.disabled {
-  color: var(--muted);
+  color: var(--line);
   cursor: not-allowed;
+}
+
+.scale-bar {
+  display: flex;
+  gap: 8px;
+}
+
+.scale-chip,
+.ghost-btn {
+  border: 1px solid var(--ink);
+  background: var(--panel);
+  padding: 6px 10px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+
+.scale-chip {
+  border-color: var(--accent);
+  color: var(--accent);
+  border-style: dashed;
+}
+
+.scale-chip.is-true {
+  border-style: solid;
+}
+
+.ghost-btn:hover,
+.scale-chip:hover {
+  background: var(--ink);
+  color: var(--panel);
+  border-color: var(--ink);
+}
+
+.warning {
+  max-width: 1680px;
+  margin: 0 auto;
+  padding: 8px 24px;
+  border: 1px solid var(--accent);
+  border-bottom: none;
+  background: #fbeee9;
+  color: var(--accent);
+  font-size: 12px;
 }
 
 /* ---------- Main panel ---------- */
 .panel {
-  max-width: 1200px;
+  max-width: 1680px;
   margin: 0 auto;
   padding: 20px 24px;
   border: 1px solid var(--ink);
   background: var(--panel);
-}
-
-.filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 28px;
-  margin-bottom: 16px;
-}
-
-.filter {
-  border: none;
-  background: none;
-  padding: 4px 0;
-  color: var(--muted);
-  letter-spacing: 0.15em;
-}
-
-.filter.active {
-  color: var(--ink);
-  font-weight: 500;
 }
 
 .workspace {
@@ -103,80 +161,294 @@ button {
   align-items: flex-start;
 }
 
-/* ---------- The tray (SVG) ---------- */
-#tray {
+.stage {
   flex: 1;
+  min-width: 0;
+}
+
+/* ---------- Boards (tray and piece) ---------- */
+.board-scroll {
+  overflow: auto;
+}
+
+.board {
+  display: block;
   width: 100%;
-  max-height: 55vh;      /* keep the library visible below without scrolling */
-  overflow: visible;    /* lets a stone show while it's dragged in from the library */
-  touch-action: none;    /* stop the page scrolling while dragging on touch screens */
+  height: auto;
+  max-height: 64vh;
+  margin: 0 auto;
+  touch-action: none;   /* stop the page scrolling while dragging on touch screens */
   user-select: none;
 }
 
-/* Keep lines 1 screen pixel thick, even though the SVG is drawn in mm. */
-#tray * {
-  vector-effect: non-scaling-stroke;
+/* True size: app.js sets the exact width and height in px. */
+.board.true-size {
+  max-width: none;
+  max-height: none;
 }
 
 .tray-body {
-  fill: #fdfcf8;
+  stroke: none;
+}
+
+.tray-outline {
+  fill: none;
   stroke: var(--ink);
   stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
 }
 
-.groove {
-  fill: #e7e3d7;
-  stroke: #a8a395;
+.groove-edge {
+  stroke: #b7b2a4;
   stroke-width: 0.8;
+  vector-effect: non-scaling-stroke;
 }
 
-.groove-shadow {
-  stroke: #c9c4b5;
-  stroke-width: 2;
+.groove-edge.light {
+  stroke: #ffffff;
 }
 
 .ruler line {
   stroke: var(--accent);
-  stroke-width: 0.8;
+  stroke-width: 0.7;
+  vector-effect: non-scaling-stroke;
 }
 
 .ruler text {
   fill: var(--accent);
   font-family: var(--mono);
-  font-size: 3.2px;
+  font-size: 2.4px;
+}
+
+.ruler .ruler-unit {
+  font-size: 2.6px;
+  letter-spacing: 0.08em;
 }
 
 .stone {
   cursor: grab;
 }
 
-.stone path,
-.stone circle,
-.stone ellipse,
-.stone polygon {
-  stroke: var(--ink);
-  stroke-width: 1;
-}
-
-.stone .facet {
-  fill: none;
-  stroke-width: 0.6;
-}
-
-.stone .select-ring {
+.select-ring {
   fill: none;
   stroke: var(--accent);
   stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+}
+
+.select-lead {
+  stroke: var(--accent);
+  stroke-width: 0.8;
+  vector-effect: non-scaling-stroke;
+}
+
+.select-label {
+  fill: var(--accent);
+  font-family: var(--mono);
+  font-size: 2.4px;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}
+
+.select-label.sub {
+  letter-spacing: 0;
 }
 
 body.dragging,
-body.dragging .stone {
-  cursor: grabbing;
+body.dragging * {
+  cursor: grabbing !important;
+}
+
+/* Library drag preview, drawn at the board's scale. */
+.ghost {
+  position: fixed;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 50;
+}
+
+.ghost.show {
+  opacity: 0.92;
+}
+
+.ghost svg {
+  display: block;
+  overflow: visible;
+}
+
+/* ---------- Piece (template) ---------- */
+.piece-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.pb-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.pb-label {
+  width: 80px;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  color: var(--muted);
+}
+
+.segs {
+  display: flex;
+}
+
+.seg {
+  border: 1px solid var(--ink);
+  background: var(--panel);
+  padding: 6px 12px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  margin-right: -1px;
+}
+
+.seg.active {
+  background: var(--ink);
+  color: var(--panel);
+}
+
+.pb-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.pb-opts label {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.pb-opts select {
+  margin-left: 6px;
+}
+
+.metals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.metal-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  padding: 4px 10px 4px 5px;
+  font-size: 11px;
+}
+
+.metal-chip i {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+}
+
+.metal-chip.active {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.compare-btn {
+  margin-left: auto;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.compare-btn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.body-line {
+  fill: none;
+  stroke: #b9b2a3;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.body-line.body-fill {
+  fill: #f6efe6;
+}
+
+.body-line.faint {
+  stroke: #d2cbbd;
+}
+
+.metal-edge {
+  stroke: rgba(0, 0, 0, 0.45);
+  stroke-width: 0.7;
+  vector-effect: non-scaling-stroke;
+}
+
+.dim line {
+  stroke: var(--accent);
+  stroke-width: 0.7;
+  vector-effect: non-scaling-stroke;
+}
+
+.piece-label {
+  fill: var(--muted);
+  font-family: var(--mono);
+  font-size: 2.4px;
+  letter-spacing: 0.1em;
+}
+
+.compare-note {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.compare-cells {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.cmp-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  background: #fff;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+
+.cmp-cell svg {
+  width: 100%;
+  max-height: 34vh;
+}
+
+.cmp-cell.active {
+  border-color: var(--ink);
+}
+
+.cmp-cell:hover {
+  border-color: var(--accent);
 }
 
 /* ---------- Inspector (selected stone) ---------- */
 .inspector {
-  width: 230px;
+  width: 270px;
   flex-shrink: 0;
   font-size: 13px;
 }
@@ -184,6 +456,10 @@ body.dragging .stone {
 .inspector .hint {
   color: var(--muted);
   line-height: 1.6;
+}
+
+.inspector .keys {
+  font-size: 12px;
 }
 
 .insp-title {
@@ -195,7 +471,75 @@ body.dragging .stone {
 
 .insp-sub {
   color: var(--accent);
-  margin: 0 0 16px;
+  margin: 0 0 12px;
+}
+
+.insp-preview {
+  position: relative;
+  height: 128px;
+  border: 1px solid var(--line);
+  background: #fff;
+  margin-bottom: 14px;
+}
+
+.insp-preview svg {
+  width: 100%;
+  height: 100%;
+  padding: 10px;
+}
+
+.insp-preview span {
+  position: absolute;
+  right: 6px;
+  bottom: 4px;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.field > span {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.field em {
+  font-style: normal;
+  color: var(--ink);
+  letter-spacing: 0;
+}
+
+.field select {
+  width: 100%;
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.swatch {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+}
+
+.swatch.active {
+  box-shadow: 0 0 0 2px var(--panel), 0 0 0 3px var(--accent);
+}
+
+.size-rows {
+  margin-top: 4px;
 }
 
 .size-row {
@@ -206,15 +550,15 @@ body.dragging .stone {
 }
 
 .size-row span:first-child {
-  width: 56px;
+  width: 60px;
+  font-size: 11px;
   color: var(--muted);
   letter-spacing: 0.1em;
 }
 
 .size-row input {
-  width: 70px;
+  width: 74px;
   padding: 4px 6px;
-  font-family: var(--mono);
   border: 1px solid var(--ink);
   background: #fff;
 }
@@ -223,7 +567,7 @@ body.dragging .stone {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
-  margin-top: 16px;
+  margin-top: 14px;
 }
 
 .actions button {
@@ -234,6 +578,12 @@ body.dragging .stone {
   letter-spacing: 0.12em;
 }
 
+.actions button.wide {
+  grid-column: span 2;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .actions button:hover {
   background: var(--ink);
   color: var(--panel);
@@ -241,16 +591,42 @@ body.dragging .stone {
 
 /* ---------- Stone library ---------- */
 .label {
-  margin: 24px 0 8px;
+  margin: 24px 0 10px;
   font-size: 12px;
   letter-spacing: 0.15em;
   color: var(--muted);
 }
 
+.library-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 32px;
+  padding: 12px;
+  border: 1px solid var(--ink);
+  border-bottom: none;
+}
+
+.pick-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pick-label {
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  color: var(--muted);
+}
+
+.pick-name {
+  font-size: 12px;
+}
+
 .library {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 4px;
   padding: 12px;
   border: 1px solid var(--ink);
 }
@@ -259,9 +635,9 @@ body.dragging .stone {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  width: 84px;
-  padding: 8px 4px;
+  gap: 2px;
+  width: 88px;
+  padding: 6px 4px;
   border: 1px solid transparent;
   background: none;
   font-size: 10px;
@@ -272,15 +648,21 @@ body.dragging .stone {
 
 .lib-item:hover {
   border-color: var(--line);
+  color: var(--ink);
 }
 
-.lib-item svg {
-  width: 56px;
-  height: 56px;
+.lib-svg {
+  width: 64px;
+  height: 64px;
+  overflow: visible;
 }
 
-.lib-item svg * {
-  vector-effect: non-scaling-stroke;
+.lib-size {
+  color: var(--accent);
+}
+
+g.shadowed {
+  filter: url(#stone-shadow);
 }
 
 /* ---------- Footer ---------- */
@@ -301,16 +683,162 @@ body.dragging .stone {
   font-size: 12px;
 }
 
+/* ---------- Screen set-up dialog ---------- */
+.scale-dialog {
+  width: min(620px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  padding: 28px 32px;
+  border: 1px solid var(--ink);
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.scale-dialog::backdrop {
+  background: rgba(31, 31, 31, 0.45);
+}
+
+.scale-dialog h2 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 28px;
+  margin: 4px 0 8px;
+}
+
+.dlg-kicker {
+  margin: 0;
+  color: var(--accent);
+  font-size: 12px;
+  letter-spacing: 0.15em;
+}
+
+.dlg-gap {
+  margin-top: 24px;
+}
+
+.dlg-text {
+  margin: 6px 0 14px;
+  line-height: 1.6;
+  font-size: 13px;
+}
+
+.dlg-hint {
+  margin: 6px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.dlg-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+  font-size: 13px;
+}
+
+.dlg-row > span:first-child {
+  width: 84px;
+  flex-shrink: 0;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.dlg-row select {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  padding: 6px;
+}
+
+.dlg-row input[type="number"] {
+  width: 80px;
+  padding: 5px 6px;
+  border: 1px solid var(--ink);
+}
+
+.dlg-row input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+.nudge {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--ink);
+  background: var(--panel);
+}
+
+.dlg-row output {
+  width: 52px;
+  text-align: right;
+  color: var(--accent);
+}
+
+.card-check {
+  overflow-x: auto;
+  padding: 6px 0;
+}
+
+.card-outline {
+  fill: #fff;
+  stroke: var(--accent);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.card-label {
+  fill: var(--muted);
+  font-family: var(--mono);
+  font-size: 3px;
+  letter-spacing: 0.12em;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+.card-ruler line {
+  stroke: var(--accent);
+  stroke-width: 0.8;
+  vector-effect: non-scaling-stroke;
+}
+
+.card-ruler text {
+  fill: var(--accent);
+  font-family: var(--mono);
+  font-size: 2.6px;
+}
+
+.dlg-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.dlg-actions button {
+  padding: 10px 14px;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  border: 1px solid var(--ink);
+}
+
+.dlg-actions .secondary {
+  background: var(--panel);
+}
+
+.dlg-actions .primary {
+  background: var(--ink);
+  color: var(--panel);
+}
+
 /* ---------- Small screens ---------- */
-@media (max-width: 760px) {
+@media (max-width: 900px) {
   body {
-    padding: 12px;
+    padding: 8px;
   }
 
   .topbar {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
     padding: 12px 16px;
   }
 
@@ -324,5 +852,9 @@ body.dragging .stone {
 
   .inspector {
     width: 100%;
+  }
+
+  .compare-cells {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
