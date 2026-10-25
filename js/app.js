@@ -840,13 +840,17 @@ function refreshPiece() {
 // ---------- Modes ----------
 
 function setMode(m) {
+  if (mode === 'tryon' && m !== 'tryon') leaveTryOn();
   mode = m;
   selectedId = null;
+  document.body.classList.toggle('mode-tryon', m === 'tryon');
   document.querySelectorAll('.mode[data-mode]').forEach(function (b) {
     b.classList.toggle('active', b.getAttribute('data-mode') === m);
   });
   $('tray-view').hidden = m !== 'tray';
   $('piece-view').hidden = m !== 'piece';
+  $('tryon-view').hidden = m !== 'tryon';
+  if (m === 'tryon') renderTryOn();
   if (m === 'piece') {
     renderPieceBar();
     drawPiece();
@@ -959,7 +963,8 @@ function save() {
   try {
     localStorage.setItem(STORE_KEY, JSON.stringify({
       nextId: nextId, mode: mode, trayStones: trayStones, pieceStones: pieceStones,
-      piece: piece, libPick: libPick, scale: scale
+      piece: piece, libPick: libPick, scale: scale,
+      tryon: { part: tryon.part, side: tryon.side, stud: tryon.stud }  // the photo itself isn't saved
     }));
   } catch (err) { /* private mode etc.: the app still works, it just won't remember */ }
 }
@@ -984,7 +989,12 @@ function load() {
   trayStones.concat(pieceStones.ring, pieceStones.bracelet, pieceStones.necklace).forEach(function (s) {
     nextId = Math.max(nextId, s.id + 1);
   });
-  if (data.mode === 'piece') mode = 'piece';
+  if (data.mode === 'piece' || data.mode === 'tryon') mode = data.mode;
+  if (data.tryon) {
+    if (data.tryon.part) tryon.part = data.tryon.part;
+    if (data.tryon.side) tryon.side = data.tryon.side;
+    if (data.tryon.stud && CUTS[data.tryon.stud.cut]) tryon.stud = data.tryon.stud;
+  }
   return scale.asked;
 }
 
