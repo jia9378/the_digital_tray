@@ -132,6 +132,7 @@ function ringLayout(p) {
 // ---------- Bracelet ----------
 function braceletLayout(p) {
   if (p.braceletStyle === 'bangle') return bangleLayout(p);
+  if (p.braceletStyle === 'beads') return beadBraceletLayout(p);
 
   // A line bracelet laid out straight on the bench.
   var L = p.braceletLen;
@@ -160,6 +161,32 @@ function braceletLayout(p) {
   return {
     vb: { x: 0, y: 0, w: L + 26, h: 40 + bw },
     guides: [[[x0 + 1, cy], [x0 + L - 1, cy]]],
+    draw: draw
+  };
+}
+
+// A bead bracelet (手串) laid flat: a circle of beads on an elastic cord.
+// The length is measured round the bead centres, which is the cord length.
+function beadBraceletLayout(p) {
+  var L = p.beadLen;
+  var R = L / (2 * Math.PI);
+  var m = 14;                       // room for beads up to ~20 mm
+  var cx = R + m;
+  var cy = R + m;
+  var circle = ellipsePoints(cx, cy, R, R, 240);
+
+  function draw() {
+    var d = polyPath(circle, true);
+    var html = '<path d="' + d + '" fill="none" stroke="#9c9586" stroke-opacity="0.45" stroke-width="0.9"/>';
+    html += '<path d="' + d + '" fill="none" stroke="#f6f3ec" stroke-width="0.55"/>';
+    html += dimLabel(cx, cy - 2, 'BEAD BRACELET 手串');
+    html += dimLabel(cx, cy + 2.5, (L / 10) + ' cm CORD');
+    return html;
+  }
+
+  return {
+    vb: { x: 0, y: 0, w: 2 * cx, h: 2 * cy },
+    guides: [circle],
     draw: draw
   };
 }
@@ -284,7 +311,8 @@ function pointsAlongGuide(guide, x, y, spacing) {
 
   var pts = [];
   if (closed) {
-    var n = Math.floor(total / spacing);
+    // A drawn circle is a polygon, a hair shorter than the real one, so allow a little slack.
+    var n = Math.max(1, Math.floor(total / spacing + 0.02));
     var even = total / n;
     for (var k = 1; k < n; k++) pts.push(pointAt(start + k * even));
     return pts;

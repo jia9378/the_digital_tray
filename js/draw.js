@@ -364,14 +364,18 @@ function stoneSVG(stone) {
     return html;
   }
 
-  // --- Smooth domes: cabochons and round beads ---
-  if (cut === 'cabRound' || cut === 'cabOval' || cut === 'beadRound') {
+  // --- Round beads: polished spheres, drilled through ---
+  if (cut === 'beadRound') {
+    return beadSphereSVG(stone, color, sw);
+  }
+
+  // --- Smooth domes: cabochons ---
+  if (cut === 'cabRound' || cut === 'cabOval') {
     outline = makeOutline(cut, w, h);
     d = outlinePath(outline);
     html += '<path d="' + d + '" fill="url(#' + domeGradient(hex) + ')"/>';
     html += extras(color, d, w, h);
     html += '<ellipse cx="' + r2(-w * 0.16) + '" cy="' + r2(-h * 0.2) + '" rx="' + r2(w * 0.12) + '" ry="' + r2(h * 0.07) + '" fill="#ffffff" fill-opacity="0.6" transform="rotate(-35 ' + r2(-w * 0.16) + ' ' + r2(-h * 0.2) + ')"/>';
-    if (cut === 'beadRound') html += drillHole(w, sw);
     html += '<path d="' + d + '"' + outlineAttrs + '/>';
     return html;
   }
@@ -440,6 +444,131 @@ function extras(color, d, w, h) {
   return html;
 }
 
+// ---------- Round beads ----------
+// A bead lies on its side with the drill hole along its x axis, so when the
+// bead is turned to follow the cord, the hole and the inclusions turn with it.
+// The light doesn't turn: the shading layers are rotated back by -rot.
+
+var beadClipCount = 0;
+
+// Fixed pseudo-random numbers, so a bead looks the same on every redraw.
+function seededRandom(seed) {
+  var x = seed;
+  return function () {
+    x = (x * 16807) % 2147483647;
+    return (x - 1) / 2147483646;
+  };
+}
+
+function glassGradient(hex) {
+  var id = 'glass-' + hex.slice(1);
+  // Transparent sphere: works like a lens, so light gathers low on the far side.
+  return addDef(id,
+    '<radialGradient id="' + id + '" cx="0.5" cy="0.5" r="0.5" fx="0.6" fy="0.68">' +
+    stopsMarkup([
+      [0, mix(hex, '#ffffff', 0.65)],
+      [0.45, mix(hex, '#ffffff', 0.12)],
+      [0.8, mix(hex, '#000000', 0.15)],
+      [1, mix(hex, '#000000', 0.45)]
+    ]) + '</radialGradient>');
+}
+
+function beadInclusions(color, r) {
+  var html = '';
+  var rnd;
+  if (color.needles) {
+    // Rutile hairs: long, thin, criss-crossing.
+    rnd = seededRandom(7);
+    for (var i = 0; i < 11; i++) {
+      var a = rnd() * Math.PI;
+      var ox = (rnd() - 0.5) * r * 1.2;
+      var oy = (rnd() - 0.5) * r * 1.2;
+      var len = r * (0.8 + rnd() * 0.9);
+      html += '<line x1="' + r2(ox - Math.cos(a) * len) + '" y1="' + r2(oy - Math.sin(a) * len) +
+        '" x2="' + r2(ox + Math.cos(a) * len) + '" y2="' + r2(oy + Math.sin(a) * len) +
+        '" stroke="' + color.needles + '" stroke-width="' + r2(r * (0.02 + rnd() * 0.025)) + '" stroke-opacity="0.85" stroke-linecap="round"/>';
+    }
+  }
+  if (color.dots) {
+    // Specks: strawberry quartz's red dots, sunstone's glitter.
+    rnd = seededRandom(11);
+    for (var j = 0; j < 46; j++) {
+      var t = rnd() * Math.PI * 2;
+      var dist = Math.sqrt(rnd()) * r * 0.95;
+      html += '<circle cx="' + r2(Math.cos(t) * dist) + '" cy="' + r2(Math.sin(t) * dist) + '" r="' + r2(r * (0.025 + rnd() * 0.035)) + '" fill="' + color.dots + '" fill-opacity="0.85"/>';
+    }
+  }
+  if (color.bands) {
+    // Stripes across the bead: tiger's eye, rhodochrosite.
+    rnd = seededRandom(5);
+    for (var k = -4; k <= 4; k++) {
+      var y = k * r * 0.24 + (rnd() - 0.5) * r * 0.08;
+      var bend = (rnd() - 0.5) * r * 1.1;
+      html += '<path d="M ' + r2(-r * 1.1) + ' ' + r2(y) + ' Q 0 ' + r2(y + bend) + ' ' + r2(r * 1.1) + ' ' + r2(y - bend * 0.3) +
+        '" fill="none" stroke="' + color.bands + '" stroke-width="' + r2(r * (0.05 + rnd() * 0.08)) + '" stroke-opacity="0.5"/>';
+    }
+  }
+  if (color.phantom) {
+    // Green phantom: a mossy cloud in the lower part of the bead.
+    html += '<path d="M ' + r2(-r * 1.1) + ' ' + r2(r * 0.1) +
+      ' Q ' + r2(-r * 0.6) + ' ' + r2(-r * 0.25) + ' ' + r2(-r * 0.2) + ' ' + r2(r * 0.12) +
+      ' T ' + r2(r * 0.5) + ' ' + r2(r * 0.05) + ' T ' + r2(r * 1.1) + ' ' + r2(r * 0.2) +
+      ' L ' + r2(r * 1.1) + ' ' + r2(r * 1.1) + ' L ' + r2(-r * 1.1) + ' ' + r2(r * 1.1) + ' Z" fill="' + color.phantom + '" fill-opacity="0.55"/>';
+    rnd = seededRandom(3);
+    for (var m = 0; m < 30; m++) {
+      html += '<circle cx="' + r2((rnd() - 0.5) * r * 1.9) + '" cy="' + r2(r * (0.05 + rnd() * 0.85)) + '" r="' + r2(r * (0.03 + rnd() * 0.05)) + '" fill="' + mix(color.phantom, '#000000', 0.3) + '" fill-opacity="0.6"/>';
+    }
+  }
+  if (color.web) {
+    // Larimar: pale lacy lines.
+    rnd = seededRandom(13);
+    for (var n = 0; n < 9; n++) {
+      var x0 = (rnd() - 0.5) * r * 2;
+      var y0 = (rnd() - 0.5) * r * 2;
+      html += '<path d="M ' + r2(x0) + ' ' + r2(y0) + ' q ' + r2((rnd() - 0.5) * r) + ' ' + r2((rnd() - 0.5) * r) + ' ' + r2((rnd() - 0.5) * r * 1.4) + ' ' + r2((rnd() - 0.5) * r * 1.4) +
+        '" fill="none" stroke="' + color.web + '" stroke-width="' + r2(r * 0.05) + '" stroke-opacity="0.75" stroke-linecap="round"/>';
+    }
+  }
+  return html;
+}
+
+function beadSphereSVG(stone, color, sw) {
+  var r = stone.w / 2;
+  var hex = color.hex;
+  var unrotate = ' transform="rotate(' + (-(stone.rot || 0)) + ')"';
+  var clip = 'bead-clip-' + (++beadClipCount);
+  var html = '<defs><clipPath id="' + clip + '"><circle r="' + r2(r) + '"/></clipPath></defs>';
+
+  // Body, lit from the top left whatever the bead's rotation.
+  var fill = color.clear ? glassGradient(hex) : domeGradient(hex);
+  html += '<circle r="' + r2(r) + '" fill="url(#' + fill + ')"' + unrotate + '/>';
+
+  html += '<g clip-path="url(#' + clip + ')">';
+  html += beadInclusions(color, r);
+  // The cord shows faintly through a transparent bead.
+  if (color.clear) {
+    html += '<line x1="' + r2(-r) + '" y1="0" x2="' + r2(r) + '" y2="0" stroke="#ffffff" stroke-opacity="0.22" stroke-width="' + r2(r * 0.07) + '"/>';
+  }
+  html += '</g>';
+  if (color.sheen) {
+    html += '<ellipse cx="' + r2(r * 0.1) + '" cy="' + r2(-r * 0.05) + '" rx="' + r2(r * 0.7) + '" ry="' + r2(r * 0.55) + '" fill="url(#' + sheenGradient(color.sheen) + ')"' + unrotate + '/>';
+  }
+
+  // Drill hole openings at both ends of the x axis.
+  [-1, 1].forEach(function (side) {
+    html += '<ellipse cx="' + r2(side * r * 0.95) + '" cy="0" rx="' + r2(r * 0.05) + '" ry="' + r2(r * 0.13) + '" fill="#000000" fill-opacity="0.35"/>';
+  });
+
+  // Highlights: a window reflection and a soft glow, both fixed to the light.
+  html += '<g' + unrotate + '>' +
+    '<ellipse cx="' + r2(-r * 0.36) + '" cy="' + r2(-r * 0.42) + '" rx="' + r2(r * 0.24) + '" ry="' + r2(r * 0.13) + '" fill="#ffffff" fill-opacity="0.85" transform="rotate(-38 ' + r2(-r * 0.36) + ' ' + r2(-r * 0.42) + ')"/>' +
+    (color.clear ? '<ellipse cx="' + r2(r * 0.22) + '" cy="' + r2(r * 0.42) + '" rx="' + r2(r * 0.42) + '" ry="' + r2(r * 0.24) + '" fill="#ffffff" fill-opacity="0.18"/>' : '') +
+    '</g>';
+
+  html += '<circle r="' + r2(r) + '" fill="none" stroke="' + INK + '" stroke-opacity="0.55" stroke-width="' + r2(sw) + '"/>';
+  return html;
+}
+
 function drillHole(w, sw) {
   return '<circle r="' + r2(w * 0.1) + '" fill="#2a2622" fill-opacity="0.75" stroke="' + INK + '" stroke-width="' + r2(sw * 0.5) + '"/>';
 }
@@ -448,6 +577,11 @@ function drillHole(w, sw) {
 function swatchCSS(color) {
   if (color.finish === 'ab') return 'linear-gradient(135deg, #ffc7e8, #c4f1ff 40%, #e6ffc9 70%, #fff0bf)';
   if (color.finish === 'opal') return 'linear-gradient(135deg, ' + color.hex + ' 20%, #5be0ff, #7cff9a, #ff7ad9, ' + color.hex + ' 85%)';
+  if (color.needles) return 'repeating-linear-gradient(62deg, ' + color.hex + ' 0 4px, ' + color.needles + ' 4px 5px), ' + color.hex;
+  if (color.dots) return 'radial-gradient(' + color.dots + ' 1.5px, transparent 2px) 0 0 / 6px 6px, ' + color.hex;
+  if (color.bands) return 'repeating-linear-gradient(170deg, ' + color.hex + ' 0 3px, ' + color.bands + ' 3px 5px)';
+  if (color.phantom) return 'linear-gradient(' + color.hex + ' 45%, ' + color.phantom + ' 55%)';
+  if (color.web) return 'radial-gradient(circle at 30% 40%, ' + color.web + ' 10%, transparent 25%), radial-gradient(circle at 70% 70%, ' + color.web + ' 8%, transparent 22%), ' + color.hex;
   if (color.rim) return 'radial-gradient(circle, ' + color.hex + ' 45%, ' + color.rim + ' 50%)';
   if (color.over) return 'radial-gradient(circle at 35% 30%, #ffffff, ' + color.hex + ' 55%, ' + color.over + ')';
   if (color.sheen) return 'radial-gradient(circle at 55% 45%, ' + color.sheen + ', ' + color.hex + ' 65%)';

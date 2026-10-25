@@ -27,6 +27,7 @@ var piece = {
   ringSize: 7,
   ringBand: 3,
   braceletStyle: 'line',
+  beadLen: 160,
   braceletLen: 180,
   braceletBand: 4,
   bangleWidth: 62.5,
@@ -207,6 +208,7 @@ function settle(s, snap) {
       if (near && near.dist < SNAP_DIST) {
         s.x = near.x;
         s.y = near.y;
+        if (isBead(s)) s.rot = guideAngle(near);
       }
     }
   }
@@ -215,6 +217,19 @@ function settle(s, snap) {
 }
 
 // Rough overlap test, treating each stone as a circle of its average size.
+// Drilled beads: their hole runs along their x axis, so they turn to follow the cord.
+function isBead(s) {
+  return s.cut === 'beadRound' || s.cut === 'beadFaceted';
+}
+
+// Direction (degrees) of the template line at a nearestOnGuides() result.
+function guideAngle(near) {
+  var g = layout.guides[near.guide];
+  var a = g[near.seg];
+  var b = g[near.seg + 1];
+  return Math.round(Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI);
+}
+
 function overlaps(x, y, r, except) {
   return activeStones().some(function (o) {
     return o !== except && Math.hypot(o.x - x, o.y - y) < r + (o.w + o.h) / 4 - 0.05;
@@ -259,7 +274,7 @@ function guideAnchor() {
     g.forEach(function (p) { if (p[1] > low[1]) low = p; });
     return { x: low[0], y: low[1] };
   }
-  if (piece.type === 'bracelet' && piece.braceletStyle === 'bangle') {
+  if (piece.type === 'bracelet' && piece.braceletStyle !== 'line') {
     var top = g[0];
     g.forEach(function (p) { if (p[1] < top[1]) top = p; });
     return { x: top[0], y: top[1] };
@@ -576,10 +591,13 @@ function fillAlongLine() {
   }
   s.x = near.x;
   s.y = near.y;
-  // Stones side by side, 0.3 mm apart. A rotated stone takes up more or less room along the line.
+  var bead = isBead(s);
+  if (bead) s.rot = guideAngle(near);
+  // Stones side by side, 0.3 mm apart; beads touch, like on a real strand.
+  // A rotated stone takes up more or less room along the line.
   var t = s.rot * Math.PI / 180;
-  var along = Math.abs(s.w * Math.cos(t)) + Math.abs(s.h * Math.sin(t));
-  var spacing = along + 0.3;
+  var along = bead ? s.w : Math.abs(s.w * Math.cos(t)) + Math.abs(s.h * Math.sin(t));
+  var spacing = along + (bead ? 0 : 0.3);
   var pts = pointsAlongGuide(layout.guides[near.guide], s.x, s.y, spacing);
   var added = 0;
   pts.forEach(function (p) {
@@ -587,7 +605,7 @@ function fillAlongLine() {
     var copy = makeStone(s.gem, s.color, s.cut, Math.round(p[0] * 100) / 100, Math.round(p[1] * 100) / 100);
     copy.w = s.w;
     copy.h = s.h;
-    copy.rot = s.rot;
+    copy.rot = bead ? guideAngle(nearestOnGuides(layout.guides, p[0], p[1])) : s.rot;
     activeStones().push(copy);
     added++;
   });
@@ -718,8 +736,13 @@ function renderPieceBar() {
     }).join('') + '</select></label>';
   }
   if (piece.type === 'bracelet') {
-    opts += '<label>STYLE <select data-opt="braceletStyle">' + option('line', 'Line, laid flat', piece.braceletStyle) + option('bangle', 'Bangle', piece.braceletStyle) + '</select></label>';
-    if (piece.braceletStyle === 'line') {
+    opts += '<label>STYLE <select data-opt="braceletStyle">' + option('line', 'Line, laid flat', piece.braceletStyle) +
+      option('beads', 'Bead bracelet 手串', piece.braceletStyle) + option('bangle', 'Bangle', piece.braceletStyle) + '</select></label>';
+    if (piece.braceletStyle === 'beads') {
+      opts += '<label>LENGTH <select data-opt="beadLen">' + [140, 150, 160, 170, 180, 190, 200].map(function (n) {
+        return option(n, (n / 10) + ' cm', piece.beadLen);
+      }).join('') + '</select></label>';
+    } else if (piece.braceletStyle === 'line') {
       opts += '<label>LENGTH <select data-opt="braceletLen">' + [150, 160, 170, 180, 190, 200].map(function (n) {
         return option(n, (n / 10) + ' cm', piece.braceletLen);
       }).join('') + '</select></label>';
@@ -728,9 +751,11 @@ function renderPieceBar() {
         return option(n, n + ' mm', piece.bangleWidth);
       }).join('') + '</select></label>';
     }
-    opts += '<label>WIDTH <select data-opt="braceletBand">' + [2, 3, 4, 5, 6, 8, 10].map(function (n) {
-      return option(n, n + ' mm', piece.braceletBand);
-    }).join('') + '</select></label>';
+    if (piece.braceletStyle !== 'beads') {
+      opts += '<label>WIDTH <select data-opt="braceletBand">' + [2, 3, 4, 5, 6, 8, 10].map(function (n) {
+        return option(n, n + ' mm', piece.braceletBand);
+      }).join('') + '</select></label>';
+    }
   }
   if (piece.type === 'necklace') {
     opts += '<label>LENGTH <select data-opt="necklaceLen">' + [40, 42, 45, 50, 55, 60].map(function (n) {

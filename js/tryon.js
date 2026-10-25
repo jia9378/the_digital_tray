@@ -94,6 +94,28 @@ function overlayMarkup() {
     var bwB = piece.braceletBand;
     var show = 60;
     var mx, my, list;
+    if (piece.braceletStyle === 'beads') {
+      // Bead bracelet: unroll the circle and show the beads nearest the top
+      // as a row across the wrist, holes along the cord.
+      var bx = 0, byc = 0;
+      gw.forEach(function (p) { bx += p[0]; byc += p[1]; });
+      bx /= gw.length;
+      byc /= gw.length;
+      var R = piece.beadLen / (2 * Math.PI);
+      var row = [];
+      pieceStones.bracelet.forEach(function (s) {
+        var arc = Math.atan2(s.x - bx, -(s.y - byc)) * R; // 0 at the top, + clockwise
+        if (Math.abs(arc) > show / 2 + 2) return;
+        var c = shift([s], 0, 0)[0];
+        c.x = arc;
+        c.y = 0;
+        c.rot = 0;
+        row.push(c);
+      });
+      html += '<line x1="' + (-show / 2) + '" y1="0" x2="' + (show / 2) + '" y2="0" stroke="#f6f3ec" stroke-width="0.55"/>';
+      html += stonesMarkup(row);
+      return html;
+    }
     if (piece.braceletStyle === 'bangle') {
       // Stones on the top half of the oval, laid straight across the wrist.
       var sx = 0, sy = 0;
@@ -275,7 +297,7 @@ function partNote() {
   var p = TRYON_PARTS.filter(function (x) { return x.id === tryon.part; })[0];
   var n = pieceStones[p.piece].length;
   var size = p.piece === 'ring' ? 'US ' + piece.ringSize + ', ' + piece.ringBand + ' mm band'
-    : p.piece === 'bracelet' ? piece.braceletBand + ' mm wide, middle 60 mm shown'
+    : p.piece === 'bracelet' ? (piece.braceletStyle === 'beads' ? 'bead bracelet ' + (piece.beadLen / 10) + ' cm' : piece.braceletBand + ' mm wide') + ', middle 60 mm shown'
     : piece.necklaceLen + ' cm chain';
   return '<p class="hint">Your ' + p.piece + ' from the Piece tab: ' + size + ', ' + n + (n === 1 ? ' stone' : ' stones') + '.' +
     (n === 0 ? ' <strong>Add stones on the Piece tab first.</strong>' : '') + '</p>';

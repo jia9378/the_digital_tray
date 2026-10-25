@@ -25,7 +25,7 @@ var CUTS = {
   pearlDrop:   { name: 'Drop pearl',      short: 'Drop',     w: 7,   h: 9 },
   baroque:     { name: 'Baroque pearl',   short: 'Baroque',  w: 9,   h: 11 },
   // Beads (drawn with the drill hole facing up)
-  beadRound:   { name: 'Round bead',      short: 'Bead',     w: 6,   h: 6,   lock: true },
+  beadRound:   { name: 'Round bead',      short: 'Bead',     w: 8,   h: 8,   lock: true },
   beadFaceted: { name: 'Faceted bead',    short: 'Faceted bead', w: 6, h: 6, lock: true },
   bicone:      { name: 'Bicone bead',     short: 'Bicone',   w: 4,   h: 4 }
 };
@@ -42,6 +42,10 @@ var PEARL_CUTS = ['pearlRound', 'pearlDrop', 'baroque'];
 //   sheen  floating glow (moonstone)
 //   flecks small inclusions (lapis pyrite, turquoise matrix)
 //   finish 'ab' = aurora borealis coating, 'opal' = play of colour
+// Extras used by round beads (spheres):
+//   clear   transparent, so the cord shows through
+//   needles rutile hairs, dots glitter/specks, bands stripes,
+//   phantom moss-like cloud, web lacy pattern (larimar)
 var GEMS = {
   diamond: {
     name: 'Diamond', sg: 3.52, cuts: FACETED,
@@ -231,8 +235,32 @@ var GEMS = {
       { id: 'silver',    name: 'Silver grey',       hex: '#b9bcc0', over: '#d9e3ea' }
     ]
   },
+  // Natural crystal beads (水晶): polished spheres, drilled through, strung on a cord.
   crystal: {
-    name: 'Crystal bead', sg: 0, cuts: ['beadFaceted', 'bicone', 'round'],
+    name: 'Crystal bead 水晶', sg: 0, cuts: ['beadRound', 'beadFaceted', 'round'],
+    colors: [
+      { id: 'clear',       name: 'Clear quartz 白水晶',       hex: '#eef2f5', clear: true },
+      { id: 'amethyst',    name: 'Amethyst 紫水晶',           hex: '#8a55c2', clear: true },
+      { id: 'citrine',     name: 'Citrine 黄水晶',            hex: '#f1b43a', clear: true },
+      { id: 'rose',        name: 'Rose quartz 粉水晶',        hex: '#f5c5d2', clear: true },
+      { id: 'smoky',       name: 'Smoky quartz 茶晶',         hex: '#6d5643', clear: true },
+      { id: 'goldrutile',  name: 'Golden rutilated 金发晶',   hex: '#f1ece0', clear: true, needles: '#d9a637' },
+      { id: 'blackrutile', name: 'Black rutilated 黑发晶',    hex: '#eef0f2', clear: true, needles: '#1d1d1f' },
+      { id: 'phantom',     name: 'Green phantom 绿幽灵',      hex: '#e9f0ea', clear: true, phantom: '#3d8a4b' },
+      { id: 'strawberry',  name: 'Strawberry quartz 草莓晶',  hex: '#f4c0c6', clear: true, dots: '#c42f3e' },
+      { id: 'garnet',      name: 'Garnet 石榴石',             hex: '#6a0f1f', clear: true },
+      { id: 'aquamarine',  name: 'Aquamarine 海蓝宝',         hex: '#a7d7ea', clear: true },
+      { id: 'moonstone',   name: 'Moonstone 月光石',          hex: '#eef2f6', clear: true, sheen: '#7fa8ff' },
+      { id: 'sunstone',    name: 'Sunstone 太阳石',           hex: '#e8743c', dots: '#ffd27a' },
+      { id: 'tigereye',    name: "Tiger's eye 虎眼石",        hex: '#7a4a18', bands: '#e0a94c' },
+      { id: 'rhodochrosite', name: 'Rhodochrosite 红纹石',    hex: '#e5848c', bands: '#f9d5d3' },
+      { id: 'larimar',     name: 'Larimar 海纹石',            hex: '#5fbfdc', web: '#effaff' },
+      { id: 'obsidian',    name: 'Obsidian 黑曜石',           hex: '#141416' }
+    ]
+  },
+  // Cut glass crystals: faceted and bicone beads, chatons.
+  glass: {
+    name: 'Crystal glass (faceted)', sg: 0, cuts: ['beadFaceted', 'bicone', 'round'],
     colors: [
       { id: 'clear',   name: 'Clear crystal',    hex: '#f4f7fa' },
       { id: 'ab',      name: 'Aurora borealis',  hex: '#f1f5f8', finish: 'ab' },
@@ -252,7 +280,7 @@ var GEM_GROUPS = [
   { name: 'Precious',            gems: ['diamond', 'sapphire', 'ruby', 'emerald'] },
   { name: 'Coloured stones',     gems: ['spinel', 'tanzanite', 'aquamarine', 'topaz', 'tourmaline', 'garnet', 'amethyst', 'citrine', 'peridot', 'morganite'] },
   { name: 'Opaque and phenomenal', gems: ['opal', 'moonstone', 'turquoise', 'jade', 'lapis', 'onyx'] },
-  { name: 'Pearls and beads',    gems: ['pearl', 'crystal'] }
+  { name: 'Pearls and beads',    gems: ['crystal', 'pearl', 'glass'] }
 ];
 
 function findColor(gemId, colorId) {
