@@ -136,20 +136,21 @@ function grooveY(i) {
   return GROOVE_FIRST + i * GROOVE_PITCH;
 }
 
-function drawTray() {
-  trayBoard.vb = { x: -6, y: -6, w: TRAY_W + 12, h: TRAY_H + 26 };
+// The tray itself: shadow, white body, V-grooves, outline. Used by the main
+// tray and by the small tray beside the piece. Its gradients live in the
+// shared defs, so they still work while one of the two is hidden.
+function trayBodyMarkup() {
+  addDef('groove-grad',
+    '<linearGradient id="groove-grad" x1="0" y1="0" x2="0" y2="1">' +
+    stopsMarkup([[0, '#d9d5ca'], [0.2, '#cdc8bb'], [0.48, '#aea898'], [0.5, '#8f8a7d'], [0.53, '#f4f1ea'], [0.85, '#ebe8df'], [1, '#e2ded3']]) +
+    '</linearGradient>');
+  addDef('tray-grad',
+    '<linearGradient id="tray-grad" x1="0" y1="0" x2="0" y2="1">' +
+    stopsMarkup([[0, '#ffffff'], [1, '#f6f4ee']]) + '</linearGradient>');
+  addDef('tray-shadow',
+    '<filter id="tray-shadow" x="-5%" y="-5%" width="110%" height="115%"><feGaussianBlur stdDeviation="1.2"/></filter>');
 
-  var html =
-    '<defs>' +
-      '<linearGradient id="groove-grad" x1="0" y1="0" x2="0" y2="1">' +
-        stopsMarkup([[0, '#d9d5ca'], [0.2, '#cdc8bb'], [0.48, '#aea898'], [0.5, '#8f8a7d'], [0.53, '#f4f1ea'], [0.85, '#ebe8df'], [1, '#e2ded3']]) +
-      '</linearGradient>' +
-      '<linearGradient id="tray-grad" x1="0" y1="0" x2="0" y2="1">' +
-        stopsMarkup([[0, '#ffffff'], [1, '#f6f4ee']]) +
-      '</linearGradient>' +
-      '<filter id="tray-shadow" x="-5%" y="-5%" width="110%" height="115%"><feGaussianBlur stdDeviation="1.2"/></filter>' +
-    '</defs>';
-
+  var html = '';
   // Soft shadow, then the acrylic body.
   html += '<rect x="0.6" y="1.4" width="' + TRAY_W + '" height="' + TRAY_H + '" rx="1.2" fill="#000" fill-opacity="0.16" filter="url(#tray-shadow)"/>';
   html += '<rect class="tray-body" x="0" y="0" width="' + TRAY_W + '" height="' + TRAY_H + '" rx="1.2" fill="url(#tray-grad)"/>';
@@ -163,6 +164,13 @@ function drawTray() {
   }
   // Outline on top, so the grooves look cut through the ends.
   html += '<rect class="tray-outline" x="0" y="0" width="' + TRAY_W + '" height="' + TRAY_H + '" rx="1.2"/>';
+  return html;
+}
+
+function drawTray() {
+  trayBoard.vb = { x: -6, y: -6, w: TRAY_W + 12, h: TRAY_H + 26 };
+
+  var html = trayBodyMarkup();
 
   // A millimetre ruler under the tray.
   var y0 = TRAY_H + 6;
@@ -643,14 +651,25 @@ library.addEventListener('pointerdown', function (e) {
   var s = makeStone(libPick.gem, libPick.color, cut, 0, 0);
   nextId--; // only keep the id if the stone is actually added
   drag = { fromLibrary: true, stone: s, startX: e.clientX, startY: e.clientY, moved: false };
+  startGhost(s, e);
+});
 
+// A board hidden by the compare view can't take drops.
+function boardVisible(board) {
+  return board.svg.getBoundingClientRect().width > 0;
+}
+
+// The stone that follows the pointer, at the size it will have on the board.
+function startGhost(s, e) {
   var board = activeBoard();
-  var ppm = board.svg.getScreenCTM().a; // screen px per mm on the board
+  var ctm = boardVisible(board) ? board.svg.getScreenCTM() : null;
+  var ppm = (ctm && ctm.a) || 4; // screen px per mm on the board
   var r = stoneRadius(s) + 0.5;
-  ghost.innerHTML = '<svg viewBox="' + (-r) + ' ' + (-r) + ' ' + (2 * r) + ' ' + (2 * r) + '" width="' + (2 * r * ppm) + '" height="' + (2 * r * ppm) + '">' + stoneSVG(s) + '</svg>';
+  ghost.innerHTML = '<svg viewBox="' + (-r) + ' ' + (-r) + ' ' + (2 * r) + ' ' + (2 * r) + '" width="' + (2 * r * ppm) + '" height="' + (2 * r * ppm) + '">' +
+    '<g transform="rotate(' + (s.rot || 0) + ')">' + stoneSVG(s) + '</g></svg>';
   moveGhost(e);
   document.body.classList.add('dragging');
-});
+}
 
 function moveGhost(e) {
   ghost.style.transform = 'translate(' + e.clientX + 'px, ' + e.clientY + 'px) translate(-50%, -50%)';
@@ -682,8 +701,15 @@ window.addEventListener('pointerup', function (e) {
   ghost.innerHTML = '';
 
   if (d.fromLibrary) {
+    // A click (not a drag) on a stone in the small tray picks it.
+    if (d.fromTray && !d.moved) {
+      trayPickId = d.fromTray;
+      renderSideTray();
+      return;
+    }
     var board = activeBoard();
     var s = d.stone;
+    if (d.moved && !boardVisible(board)) return;
     s.id = nextId++;
     if (!d.moved) {
       // A click on a library stone: put it in the next free spot.
@@ -712,6 +738,114 @@ window.addEventListener('pointerup', function (e) {
   refreshInspectorBits();
   if (mode === 'piece' && piece.compare) renderCompare();
   save();
+});
+
+
+// ---------- The tray beside the piece ----------
+// A small copy of the tray (fitted to its stones, not true size) next to the
+// piece, so stones laid out on the tray can be moved onto the piece.
+
+var trayPickId = null;
+var sideTray = $('side-tray');
+
+function copyStone(src) {
+  return { id: 0, gem: src.gem, color: src.color, cut: src.cut, w: src.w, h: src.h, x: 0, y: 0, rot: src.rot };
+}
+
+// Zoom in on the part of the tray that has stones, so they're big enough to grab.
+function sideTrayViewBox() {
+  if (!trayStones.length) return { x: -2, y: -2, w: TRAY_W + 4, h: TRAY_H + 4 };
+  var minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+  trayStones.forEach(function (st) {
+    var r = stoneRadius(st);
+    minX = Math.min(minX, st.x - r); maxX = Math.max(maxX, st.x + r);
+    minY = Math.min(minY, st.y - r); maxY = Math.max(maxY, st.y + r);
+  });
+  var box = { x: minX - 5, y: minY - 5, w: maxX - minX + 10, h: maxY - minY + 10 };
+  var minW = 70;
+  var minH = 40;
+  if (box.w < minW) { box.x -= (minW - box.w) / 2; box.w = minW; }
+  if (box.h < minH) { box.y -= (minH - box.h) / 2; box.h = minH; }
+  box.x = clamp(box.x, -2, TRAY_W + 2 - Math.min(box.w, TRAY_W + 4));
+  box.y = clamp(box.y, -2, TRAY_H + 2 - Math.min(box.h, TRAY_H + 4));
+  return box;
+}
+
+function renderSideTray() {
+  sideTray.hidden = mode !== 'piece';
+  if (mode !== 'piece') return;
+
+  var pick = null;
+  trayStones.forEach(function (st) { if (st.id === trayPickId) pick = st; });
+  if (!pick) trayPickId = null;
+
+  if (!trayStones.length) {
+    sideTray.innerHTML = '<p class="insp-title">FROM THE TRAY</p>' +
+      '<p class="hint">The tray is empty. Lay out stones on the Tray tab, then bring them onto the piece from here.</p>';
+    return;
+  }
+
+  var vb = sideTrayViewBox();
+  var html = '<p class="insp-title">FROM THE TRAY</p>' +
+    '<svg class="side-tray-svg" viewBox="' + vb.x + ' ' + vb.y + ' ' + vb.w + ' ' + vb.h + '">' +
+      trayBodyMarkup() +
+      '<g filter="url(#stone-shadow)">' + trayStones.map(stoneGroup).join('') + '</g>' +
+      (pick ? '<circle class="select-ring" cx="' + pick.x + '" cy="' + pick.y + '" r="' + (stoneRadius(pick) + 0.9) + '"/>' : '') +
+    '</svg>' +
+    '<p class="hint side-note">Not to scale. Drag a stone onto the piece, or click it and add it.</p>';
+
+  if (pick) {
+    var groove = pick.y < FLAT_START ? trayStones.filter(function (st) { return Math.abs(st.y - pick.y) < 0.01; }) : [];
+    html += '<div class="side-pick">' +
+      '<p class="side-pick-name">' + gemLabel(pick).toUpperCase() + '<br><span>' + findColor(pick.gem, pick.color).name + ' · ' + sizeText(pick) + '</span></p>' +
+      '<div class="actions"><button data-side="add">ADD TO PIECE</button>' +
+      (groove.length > 1 ? '<button data-side="groove">ADD ITS GROOVE (' + groove.length + ')</button>' : '') +
+      '</div></div>';
+  }
+  sideTray.innerHTML = html;
+}
+
+// Copy tray stones onto the piece, each in the next free place on the metal line.
+function addToPiece(list) {
+  var last = null;
+  list.forEach(function (src) {
+    var st = copyStone(src);
+    st.id = nextId++;
+    var spot = nextFreeSpot(st);
+    st.x = spot.x;
+    st.y = spot.y;
+    settle(st, true);
+    pieceStones[piece.type].push(st);
+    last = st;
+  });
+  if (last) selectedId = last.id;
+  renderStones();
+  renderInspector();
+  save();
+}
+
+sideTray.addEventListener('pointerdown', function (e) {
+  var g = e.target.closest('.stone');
+  if (!g) return;
+  e.preventDefault();
+  var src = null;
+  var id = Number(g.getAttribute('data-id'));
+  trayStones.forEach(function (st) { if (st.id === id) src = st; });
+  if (!src) return;
+  drag = { fromLibrary: true, fromTray: src.id, stone: copyStone(src), startX: e.clientX, startY: e.clientY, moved: false };
+  startGhost(drag.stone, e);
+});
+
+sideTray.addEventListener('click', function (e) {
+  var act = e.target.getAttribute('data-side');
+  var pick = null;
+  trayStones.forEach(function (st) { if (st.id === trayPickId) pick = st; });
+  if (!act || !pick) return;
+  if (act === 'add') addToPiece([pick]);
+  if (act === 'groove') {
+    addToPiece(trayStones.filter(function (st) { return Math.abs(st.y - pick.y) < 0.01; })
+      .sort(function (a, b) { return a.x - b.x; }));
+  }
 });
 
 
@@ -866,16 +1000,23 @@ function refreshPiece() {
 
 function setMode(m) {
   if (mode === 'tryon' && m !== 'tryon') leaveTryOn();
+  // A stone selected on the tray becomes the pick in the small tray beside the
+  // piece; a selected stone on either board is what Study opens on.
+  var selected = findStone(selectedId);
+  if (mode === 'tray' && selected) trayPickId = selected.id;
   mode = m;
   selectedId = null;
   document.body.classList.toggle('mode-tryon', m === 'tryon');
+  document.body.classList.toggle('mode-study', m === 'study');
   document.querySelectorAll('.mode[data-mode]').forEach(function (b) {
     b.classList.toggle('active', b.getAttribute('data-mode') === m);
   });
   $('tray-view').hidden = m !== 'tray';
   $('piece-view').hidden = m !== 'piece';
   $('tryon-view').hidden = m !== 'tryon';
+  $('study-view').hidden = m !== 'study';
   if (m === 'tryon') renderTryOn();
+  if (m === 'study') openStudy(selected);
   if (m === 'piece') {
     renderPieceBar();
     drawPiece();
@@ -883,6 +1024,7 @@ function setMode(m) {
   }
   renderStones();
   renderInspector();
+  renderSideTray();
   save();
 }
 
@@ -1014,7 +1156,7 @@ function load() {
   trayStones.concat(pieceStones.ring, pieceStones.bracelet, pieceStones.necklace).forEach(function (s) {
     nextId = Math.max(nextId, s.id + 1);
   });
-  if (data.mode === 'piece' || data.mode === 'tryon') mode = data.mode;
+  if (data.mode === 'piece' || data.mode === 'tryon' || data.mode === 'study') mode = data.mode;
   if (data.tryon) {
     if (data.tryon.part) tryon.part = data.tryon.part;
     if (data.tryon.side) tryon.side = data.tryon.side;

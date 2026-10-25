@@ -446,10 +446,54 @@ body.dragging * {
   border-color: var(--accent);
 }
 
+/* ---------- Side column: small tray + inspector ---------- */
+.side {
+  width: 290px;
+  flex-shrink: 0;
+}
+
+.side-tray {
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.side-tray-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 220px;
+  touch-action: none;
+  user-select: none;
+}
+
+.side-tray .side-note {
+  font-size: 11px;
+  margin: 6px 0 0;
+}
+
+.side-pick {
+  margin-top: 10px;
+}
+
+.side-pick-name {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+}
+
+.side-pick-name span {
+  letter-spacing: 0;
+  color: var(--ink);
+}
+
+.side-pick .actions {
+  margin-top: 8px;
+}
+
 /* ---------- Inspector (selected stone) ---------- */
 .inspector {
-  width: 270px;
-  flex-shrink: 0;
   font-size: 13px;
 }
 
@@ -834,9 +878,12 @@ g.shadowed {
 
 /* ---------- Try On ---------- */
 /* The stone library and inspector aren't used on this tab. */
-body.mode-tryon .inspector,
+body.mode-tryon .side,
 body.mode-tryon .library-wrap,
-body.mode-tryon .status {
+body.mode-tryon .status,
+body.mode-study .side,
+body.mode-study .library-wrap,
+body.mode-study .status {
   display: none;
 }
 
@@ -1051,6 +1098,256 @@ body.mode-tryon .status {
   padding: 4px;
 }
 
+/* ---------- Study ---------- */
+.st-head {
+  margin-bottom: 16px;
+}
+
+.st-title {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 34px;
+  margin: 4px 0 2px;
+}
+
+.st-sub {
+  margin: 0;
+  color: var(--muted);
+}
+
+.st-pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 28px;
+  padding: 12px 0 16px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 20px;
+}
+
+.st-pick input[type="number"] {
+  width: 64px;
+  padding: 4px 6px;
+  border: 1px solid var(--ink);
+}
+
+.st-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 32px;
+  align-items: start;
+}
+
+.st-figs {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 20px;
+}
+
+.st-fig {
+  margin: 0;
+}
+
+.st-fig-box {
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.st-fig figcaption {
+  margin-top: 6px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.st-top,
+.st-section-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.st-top {
+  aspect-ratio: 1;
+}
+
+.st-section-svg {
+  max-height: 46vh;
+}
+
+.st-section {
+  stroke: var(--accent);
+  stroke-width: 1;
+  stroke-dasharray: 5 4;
+  vector-effect: non-scaling-stroke;
+}
+
+.st-dim line {
+  stroke: var(--accent);
+  stroke-width: 0.8;
+  vector-effect: non-scaling-stroke;
+}
+
+.st-dimtext {
+  fill: var(--accent);
+  font-family: var(--mono);
+}
+
+.st-stone {
+  stroke: var(--ink);
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.st-girdle {
+  stroke: var(--muted);
+  stroke-width: 0.7;
+  stroke-dasharray: 3 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.st-lbl {
+  fill: var(--muted);
+  font-family: var(--mono);
+  letter-spacing: 0.1em;
+}
+
+.st-num {
+  font-family: var(--mono);
+  font-weight: 500;
+}
+
+.st-controls {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 28px;
+  align-items: center;
+}
+
+.st-slider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.st-slider .pick-label {
+  width: 70px;
+}
+
+.st-slider input {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--accent);
+}
+
+.st-slider output {
+  width: 52px;
+  text-align: right;
+  font-size: 12px;
+}
+
+.st-rays {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.st-rays .pick-label {
+  width: 70px;
+}
+
+.st-rays .seg:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.st-reset {
+  justify-self: start;
+}
+
+.st-log {
+  grid-column: 1 / -1;
+  margin: 4px 0 0;
+  padding-left: 22px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.st-log .st-plain {
+  list-style: none;
+  margin: 6px 0 0 -22px;
+}
+
+.st-log li.leak strong,
+.st-rule .leak {
+  color: var(--accent);
+}
+
+.st-log li.ok strong,
+.st-rule .ok {
+  color: #2f7d4a;
+}
+
+#st-rule {
+  grid-column: 1 / -1;
+}
+
+.st-rule {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  font-size: 13px;
+}
+
+.st-rule p {
+  margin: 4px 0;
+}
+
+.st-small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.st-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.st-table th,
+.st-table td {
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.st-table th {
+  width: 46%;
+  text-align: left;
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.st-table td {
+  text-align: right;
+}
+
+.st-note {
+  margin: 14px 0 0;
+  line-height: 1.6;
+  font-size: 13px;
+}
+
+.st-source {
+  margin: 12px 0 0;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 /* ---------- Small screens ---------- */
 @media (max-width: 900px) {
   body {
@@ -1069,7 +1366,7 @@ body.mode-tryon .status {
     flex-direction: column;
   }
 
-  .inspector {
+  .side {
     width: 100%;
   }
 
@@ -1077,7 +1374,10 @@ body.mode-tryon .status {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .to-wrap {
+  .to-wrap,
+  .st-grid,
+  .st-figs,
+  .st-controls {
     grid-template-columns: 1fr;
   }
 }

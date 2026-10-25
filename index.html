@@ -22,7 +22,7 @@
     <nav class="modes" id="modes">
       <button class="mode active" data-mode="tray">TRAY</button>
       <button class="mode" data-mode="piece">PIECE</button>
-      <span class="mode disabled" title="Coming later">STUDY</span>
+      <button class="mode" data-mode="study">STUDY</button>
       <button class="mode" data-mode="tryon">TRY ON</button>
     </nav>
     <div class="scale-bar">
@@ -61,6 +61,9 @@
           <div class="compare-grid" id="compare-grid" hidden></div>
         </section>
 
+        <!-- Study: gem data and a 2D light path through the stone's cross-section. -->
+        <section id="study-view" hidden></section>
+
         <!-- Try On: a photo with a bank card in it, and the piece at that scale. -->
         <section id="tryon-view" hidden>
           <div class="to-wrap">
@@ -70,7 +73,11 @@
         </section>
 
       </div>
-      <aside class="inspector" id="inspector"></aside>
+      <div class="side">
+        <!-- Piece tab only: the tray's stones, to bring onto the piece. -->
+        <div class="side-tray" id="side-tray" hidden></div>
+        <aside class="inspector" id="inspector"></aside>
+      </div>
     </div>
 
     <section class="library-wrap">
@@ -92,6 +99,8 @@
   <script src="js/draw.js"></script>
   <script src="js/scale.js"></script>
   <script src="js/templates.js"></script>
+  <script src="js/gemdata.js"></script>
+  <script src="js/study.js"></script>
   <script src="js/tryon.js"></script>
   <script src="js/app.js"></script>
 </body>
