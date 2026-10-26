@@ -1341,6 +1341,21 @@ body.mode-study .status {
   font-size: 13px;
 }
 
+.st-src-title {
+  margin: 16px 0 4px;
+}
+
+.st-src {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.st-src a {
+  color: var(--accent);
+}
+
 .st-source {
   margin: 12px 0 0;
   font-size: 11px;

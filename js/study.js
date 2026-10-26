@@ -240,7 +240,8 @@ var SPREAD = 10;
 
 // Small double refraction is exaggerated like dispersion; big (rhodochrosite) isn't.
 function doubleSpread(data) {
-  return data.biref && data.biref < 0.05 ? SPREAD : 1;
+  var b = birefValue(data);
+  return b && b < 0.05 ? SPREAD : 1;
 }
 
 function topViewSVG(s) {
@@ -401,7 +402,7 @@ function renderStudy() {
   var faceted = isFacetedCut(s.cut);
   var traced = data.look === 'transparent' || data.look === 'translucent';
   if (study.rays === 'fire' && !data.disp) study.rays = 'one';
-  if (study.rays === 'double' && !data.biref) study.rays = 'one';
+  if (study.rays === 'double' && !birefValue(data)) study.rays = 'one';
 
   var cutOptions = GEMS[s.gem].cuts.map(function (k) {
     return '<option value="' + k + '"' + (k === s.cut ? ' selected' : '') + '>' + CUTS[k].name + '</option>';
@@ -438,7 +439,7 @@ function renderStudy() {
             '<div class="st-rays"><span class="pick-label">RAYS</span><div class="segs">' +
               '<button class="seg' + (study.rays === 'one' ? ' active' : '') + '" data-rays="one">ONE</button>' +
               '<button class="seg' + (study.rays === 'fire' ? ' active' : '') + '" data-rays="fire"' + (data.disp ? '' : ' disabled') + ' title="Dispersion: each colour bends a different amount">FIRE</button>' +
-              '<button class="seg' + (study.rays === 'double' ? ' active' : '') + '" data-rays="double"' + (data.biref ? '' : ' disabled') + ' title="Birefringence: light splits into two rays">DOUBLE</button>' +
+              '<button class="seg' + (study.rays === 'double' ? ' active' : '') + '" data-rays="double"' + (birefValue(data) ? '' : ' disabled') + ' title="Birefringence: light splits into two rays">DOUBLE</button>' +
             '</div></div>' : '') +
           '<button class="link-button st-reset" data-st="reset">RESET</button>' +
         '</div>' +
@@ -507,8 +508,9 @@ function dataTable(d) {
     ['FORMULA', d.formula],
     ['SYSTEM', d.system],
     ['REFRACTIVE INDEX', ri],
-    ['DOUBLE REFRACTION', d.biref === 0 ? 'None (singly refractive)' : d.biref === null ? '—' : d.biref.toFixed(3)],
-    ['DISPERSION', d.disp ? d.disp.toFixed(3) : '—'],
+    ['DOUBLE REFRACTION', d.biref === 0 ? 'None (singly refractive)' : d.biref === null || d.biref === undefined ? 'Not detectable / not given'
+      : Array.isArray(d.biref) ? d.biref[0].toFixed(3) + '–' + d.biref[1].toFixed(3) : d.biref.toFixed(3)],
+    ['DISPERSION', d.disp ? d.disp.toFixed(3) : 'Not given'],
     ['CRITICAL ANGLE', d.look === 'opaque' || d.look === 'pearl' ? '— (light doesn\'t pass through)' : criticalAngle(meanRI(d)).toFixed(1) + '°'],
     ['HARDNESS', d.hardness + ' Mohs'],
     ['SPECIFIC GRAVITY', d.sg],
@@ -519,7 +521,12 @@ function dataTable(d) {
     return '<tr><th>' + r[0] + '</th><td>' + r[1] + '</td></tr>';
   }).join('') + '</table>' +
     (d.note ? '<p class="st-note">' + d.note + '</p>' : '') +
-    '<p class="st-source">Typical values from standard gemmology references. Individual stones vary; check GIA\'s Gem Encyclopedia before relying on a number.</p>';
+    '<p class="pick-label st-src-title">SOURCES</p>' +
+    (d.src && d.src.length
+      ? '<ul class="st-src">' + d.src.map(function (x) { return '<li><a href="' + x.url + '" target="_blank" rel="noopener">' + x.label + '</a></li>'; }).join('') + '</ul>'
+      : '<p class="st-source">No source for this entry.</p>') +
+    (d.check ? '<p class="st-source">Note: ' + d.check + '</p>' : '') +
+    '<p class="st-source">Typical values; individual stones vary.</p>';
 }
 
 
